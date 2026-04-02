@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
+
+# Coverage / test artifacts
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE / editor
+.idea/
+.vscode/
+
+# OS / local junk
+.DS_Store
+Thumbs.db
+Microsoft/
