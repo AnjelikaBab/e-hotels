@@ -84,8 +84,6 @@ Create a root `.env` file:
 VITE_USE_API=true
 ```
 
-> **Note:** Never commit your `.env` files to Git. A `.env.example` is included as a reference.
-
 ---
 
 ### 3. Start the App
