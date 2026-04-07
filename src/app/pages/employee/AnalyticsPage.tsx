@@ -184,13 +184,6 @@ export const AnalyticsPage: React.FC = () => {
         </CardContent>
       </Card>
       
-      <div className="mt-6 p-4 bg-muted rounded-lg">
-        <h4 className="mb-2">About These Views</h4>
-        <p className="text-sm text-muted-foreground">
-          These frontend reports now mirror the two SQL views required by the assignment,
-          so the demo shows the same outputs that should later come from the database.
-        </p>
-      </div>
     </div>
   );
 };
