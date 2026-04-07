@@ -42,7 +42,7 @@ Follow these steps to run the app with a real PostgreSQL database.
 
 ### 1. Set up PostgreSQL
 
-Make sure PostgreSQL is installed and running (we recommend [Postgres.app](https://postgresapp.com) on Mac).
+Make sure PostgreSQL is installed and running
 
 Create a database:
 ```bash
