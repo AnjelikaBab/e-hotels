@@ -42,7 +42,7 @@ Follow these steps to run the app with a real PostgreSQL database.
 
 ### 1. Set up PostgreSQL
 
-Make sure PostgreSQL is installed and running (we recommend [Postgres.app](https://postgresapp.com) on Mac).
+Make sure PostgreSQL is installed and running
 
 Create a database:
 ```bash
@@ -83,8 +83,6 @@ Create a root `.env` file:
 ```properties
 VITE_USE_API=true
 ```
-
-> **Note:** Never commit your `.env` files to Git. A `.env.example` is included as a reference.
 
 ---
 
