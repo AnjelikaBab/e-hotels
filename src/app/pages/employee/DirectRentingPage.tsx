@@ -36,18 +36,21 @@ export const DirectRentingPage: React.FC = () => {
   const hotel = room ? hotels.find((entry) => entry.id === room.hotelId) ?? null : null;
   const customer = customers.find(c => c.id === selectedCustomer);
   
-  const handleCreateRenting = () => {
+  const handleCreateRenting = async () => {
     if (!selectedCustomer || !selectedRoom || !currentEmployee || !startDate || !endDate || startDate < today || startDate > maxCheckInDate) {
       return;
     }
 
-    createDirectRenting({
+    const created = await createDirectRenting({
       customerId: selectedCustomer,
       roomId: selectedRoom,
       employeeId: currentEmployee.id,
       startDate,
       endDate
     });
+    if (!created) {
+      return;
+    }
     setShowSuccessModal(true);
     // Reset form
     setStep(1);

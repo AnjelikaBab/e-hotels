@@ -399,9 +399,9 @@ export const CustomerBookingsPage: React.FC = () => {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 if (selectedBookingData) {
-                  cancelBooking(selectedBookingData.id);
+                  await cancelBooking(selectedBookingData.id);
                 }
                 setShowCancelModal(false);
                 setSelectedBooking(null);

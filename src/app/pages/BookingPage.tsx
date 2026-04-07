@@ -99,7 +99,7 @@ export const BookingPage: React.FC = () => {
     }
   };
   
-  const confirmBooking = () => {
+  const confirmBooking = async () => {
     if (
       !bookingData.startDate ||
       !bookingData.endDate ||
@@ -116,7 +116,7 @@ export const BookingPage: React.FC = () => {
       return;
     }
 
-    const createdBooking = createBooking({
+    const createdBooking = await createBooking({
       roomId: room.id,
       customer: {
         fullName: bookingData.fullName,

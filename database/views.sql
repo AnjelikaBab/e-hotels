@@ -17,7 +17,7 @@ SELECT
       FROM "Renting" re
       WHERE re."Hotel_Id" = r."Hotel_Id"
         AND re."Room_Id" = r."Room_Id"
-        AND re."Booking_Status" IN ('Active', 'Confirmed', 'Converted')
+        AND re."Renting_Status" IN ('Active', 'Confirmed', 'Converted')
         AND CURRENT_DATE >= re."Start_Date"
         AND CURRENT_DATE < re."End_Date"
     )

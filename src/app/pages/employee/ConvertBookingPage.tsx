@@ -45,12 +45,15 @@ export const ConvertBookingPage: React.FC = () => {
   const hotel = room ? hotels.find((entry) => entry.id === room.hotelId) ?? null : null;
   const customer = booking ? customers.find((entry) => entry.id === booking.customerId) ?? null : null;
   
-  const handleConvert = () => {
+  const handleConvert = async () => {
     if (!selectedBooking || !currentEmployee) {
       return;
     }
 
-    convertBookingToRenting(selectedBooking, currentEmployee.id);
+    const result = await convertBookingToRenting(selectedBooking, currentEmployee.id);
+    if (!result) {
+      return;
+    }
     setShowConfirmModal(false);
     setShowSuccessModal(true);
     setSelectedBooking(null);

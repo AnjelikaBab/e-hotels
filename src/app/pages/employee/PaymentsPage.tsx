@@ -38,17 +38,21 @@ export const PaymentsPage: React.FC = () => {
     return room.price * nights;
   };
   
-  const handleSubmitPayment = () => {
+  const handleSubmitPayment = async () => {
     if (!selectedRenting || !paymentAmount) {
       return;
     }
 
-    recordPayment({
-      rentingId: selectedRenting,
-      amount: Number.parseFloat(paymentAmount),
-      paymentMethod: paymentMethod as 'Cash' | 'Credit Card' | 'Debit Card' | 'Wire Transfer',
-      paymentDate
-    });
+    try {
+      await recordPayment({
+        rentingId: selectedRenting,
+        amount: Number.parseFloat(paymentAmount),
+        paymentMethod: paymentMethod as 'Cash' | 'Credit Card' | 'Debit Card' | 'Wire Transfer',
+        paymentDate
+      });
+    } catch {
+      return;
+    }
     setSubmittedPayment({
       amount: paymentAmount,
       method: paymentMethod

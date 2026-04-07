@@ -106,7 +106,7 @@ ALTER TABLE "Renting"
     "Room_Id" WITH =,
     daterange("Start_Date", "End_Date", '[)') WITH &&
   )
-  WHERE ("Booking_Status" IN ('Active', 'Confirmed', 'Converted'));
+  WHERE ("Renting_Status" IN ('Active', 'Confirmed', 'Converted'));
 
 CREATE OR REPLACE FUNCTION "validate_renting_from_booking"()
 RETURNS TRIGGER
@@ -229,7 +229,7 @@ BEGIN
     "Employee_Last_Name",
     "Start_Date",
     "End_Date",
-    "Booking_Status",
+    "Renting_Status",
     "Book_Date",
     "Hotel_Address",
     "Room_Price"
@@ -247,7 +247,7 @@ BEGIN
     e."Last_Name",
     source_renting."Start_Date",
     source_renting."End_Date",
-    source_renting."Booking_Status",
+    source_renting."Renting_Status",
     source_renting."Book_Date",
     h."Address",
     r."Price"
@@ -271,7 +271,7 @@ BEGIN
       "Employee_Last_Name" = EXCLUDED."Employee_Last_Name",
       "Start_Date" = EXCLUDED."Start_Date",
       "End_Date" = EXCLUDED."End_Date",
-      "Booking_Status" = EXCLUDED."Booking_Status",
+      "Renting_Status" = EXCLUDED."Renting_Status",
       "Book_Date" = EXCLUDED."Book_Date",
       "Hotel_Address" = EXCLUDED."Hotel_Address",
       "Room_Price" = EXCLUDED."Room_Price";

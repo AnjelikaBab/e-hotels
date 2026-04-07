@@ -315,15 +315,6 @@ export const RoomDetailsPage: React.FC = () => {
                 >
                   Book This Room
                 </Button>
-                <Button 
-                  variant="secondary" 
-                  className="w-full"
-                  onClick={() => navigate(bookingTarget)}
-                  disabled={room.status !== 'Available' || hasPastCheckInDate || exceedsAdvanceBookingWindow || !isSelectedStayAvailable || exceedsMaximumStay}
-                >
-                  Rent Now
-                </Button>
-                
                 <div className="mt-6 text-sm text-muted-foreground text-center">
                   <p>Free cancellation up to 24 hours before check-in</p>
                 </div>

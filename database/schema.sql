@@ -110,7 +110,7 @@ CREATE TABLE "Renting" (
   "Employee_SSN" VARCHAR(40) NOT NULL,
   "Start_Date" DATE NOT NULL,
   "End_Date" DATE NOT NULL,
-  "Booking_Status" VARCHAR(20) NOT NULL CHECK ("Booking_Status" IN ('Pending', 'Confirmed', 'Converted', 'Cancelled', 'Active', 'Completed')),
+  "Renting_Status" VARCHAR(20) NOT NULL CHECK ("Renting_Status" IN ('Pending', 'Confirmed', 'Converted', 'Cancelled', 'Active', 'Completed')),
   "Book_Date" DATE NOT NULL DEFAULT CURRENT_DATE,
   CHECK ("End_Date" > "Start_Date"),
   CONSTRAINT "fk_Renting_Booking"
@@ -202,7 +202,7 @@ CREATE TABLE "Renting_Archive" (
   "Employee_Last_Name" VARCHAR(80) NOT NULL,
   "Start_Date" DATE NOT NULL,
   "End_Date" DATE NOT NULL,
-  "Booking_Status" VARCHAR(20) NOT NULL,
+  "Renting_Status" VARCHAR(20) NOT NULL,
   "Book_Date" DATE NOT NULL,
   "Hotel_Address" TEXT NOT NULL,
   "Room_Price" NUMERIC(10, 2) NOT NULL

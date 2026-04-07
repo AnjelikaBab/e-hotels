@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { fetchBootstrap, useApiData } from '../api/hotelApi';
+import type { BootstrapSnapshot } from '../api/hotelApi';
 import {
   bookings as seedBookings,
   customers as seedCustomers,
@@ -103,6 +105,8 @@ interface HotelStoreValue {
   rentingArchives: RentingArchiveRecord[];
   areaAvailableRoomsView: AreaAvailableRoomsViewRow[];
   hotelCapacityView: HotelCapacityViewRow[];
+  apiDataLoading: boolean;
+  apiConnectionError: string | null;
   searchAvailableRooms: (filters: RoomSearchFilters) => Room[];
   isRoomAvailableForStay: (roomId: string, startDate: string, endDate: string) => boolean;
   getUnavailableDatesForRoom: (roomId: string) => Date[];
@@ -111,17 +115,17 @@ interface HotelStoreValue {
     customer: Omit<Customer, 'id' | 'registrationDate'>;
     startDate: string;
     endDate: string;
-  }) => Booking | null;
-  cancelBooking: (bookingId: string) => void;
-  convertBookingToRenting: (bookingId: string, employeeId: string) => Renting | null;
+  }) => Promise<Booking | null>;
+  cancelBooking: (bookingId: string) => Promise<void>;
+  convertBookingToRenting: (bookingId: string, employeeId: string) => Promise<Renting | null>;
   createDirectRenting: (input: {
     customerId: string;
     roomId: string;
     employeeId: string;
     startDate: string;
     endDate: string;
-  }) => Renting | null;
-  recordPayment: (input: Omit<Payment, 'id'>) => Payment;
+  }) => Promise<Renting | null>;
+  recordPayment: (input: Omit<Payment, 'id'>) => Promise<Payment>;
   upsertCustomer: (input: Partial<Customer> & Pick<Customer, 'fullName' | 'address' | 'idType' | 'idNumber'>) => Customer;
   deleteCustomer: (customerId: string) => void;
   upsertEmployee: (input: Partial<Employee> & Pick<Employee, 'fullName' | 'address' | 'ssn' | 'role' | 'hotelId'>) => Employee;
@@ -239,20 +243,61 @@ const buildRentingArchiveRecord = (renting: Renting): RentingArchiveRecord => {
 };
 
 export function HotelStoreProvider({ children }: { children: React.ReactNode }) {
-  const [hotelChains, setHotelChains] = useState<HotelChain[]>(() => cloneSeed(seedHotelChains));
-  const [hotels, setHotels] = useState<Hotel[]>(() => cloneSeed(seedHotels));
-  const [rooms, setRooms] = useState<Room[]>(() => cloneSeed(seedRooms));
-  const [customers, setCustomers] = useState<Customer[]>(() => cloneSeed(seedCustomers));
-  const [employees, setEmployees] = useState<Employee[]>(() => cloneSeed(seedEmployees));
-  const [bookings, setBookings] = useState<Booking[]>(() => cloneSeed(seedBookings));
-  const [rentings, setRentings] = useState<Renting[]>(() => cloneSeed(seedRentings));
-  const [payments, setPayments] = useState<Payment[]>(() => cloneSeed(seedPayments));
+  const useApi = useApiData();
+  const [apiDataLoading, setApiDataLoading] = useState(useApi);
+  const [apiConnectionError, setApiConnectionError] = useState<string | null>(null);
+  const [sqlAreaView, setSqlAreaView] = useState<AreaAvailableRoomsViewRow[]>([]);
+  const [sqlHotelCapView, setSqlHotelCapView] = useState<HotelCapacityViewRow[]>([]);
+
+  const [hotelChains, setHotelChains] = useState<HotelChain[]>(() => (useApi ? [] : cloneSeed(seedHotelChains)));
+  const [hotels, setHotels] = useState<Hotel[]>(() => (useApi ? [] : cloneSeed(seedHotels)));
+  const [rooms, setRooms] = useState<Room[]>(() => (useApi ? [] : cloneSeed(seedRooms)));
+  const [customers, setCustomers] = useState<Customer[]>(() => (useApi ? [] : cloneSeed(seedCustomers)));
+  const [employees, setEmployees] = useState<Employee[]>(() => (useApi ? [] : cloneSeed(seedEmployees)));
+  const [bookings, setBookings] = useState<Booking[]>(() => (useApi ? [] : cloneSeed(seedBookings)));
+  const [rentings, setRentings] = useState<Renting[]>(() => (useApi ? [] : cloneSeed(seedRentings)));
+  const [payments, setPayments] = useState<Payment[]>(() => (useApi ? [] : cloneSeed(seedPayments)));
   const [bookingArchives, setBookingArchives] = useState<BookingArchiveRecord[]>(() =>
-    seedBookings.map((booking) => buildBookingArchiveRecord(booking))
+    useApi ? [] : seedBookings.map((booking) => buildBookingArchiveRecord(booking))
   );
   const [rentingArchives, setRentingArchives] = useState<RentingArchiveRecord[]>(() =>
-    seedRentings.map((renting) => buildRentingArchiveRecord(renting))
+    useApi ? [] : seedRentings.map((renting) => buildRentingArchiveRecord(renting))
   );
+
+  const applySnapshot = useCallback((s: BootstrapSnapshot) => {
+    setHotelChains(s.hotelChains);
+    setHotels(s.hotels);
+    setRooms(s.rooms);
+    setCustomers(s.customers);
+    setEmployees(s.employees);
+    setBookings(s.bookings);
+    setRentings(s.rentings);
+    setPayments(s.payments);
+    setBookingArchives(s.bookingArchives);
+    setRentingArchives(s.rentingArchives);
+    setSqlAreaView(s.areaAvailableRoomsView as AreaAvailableRoomsViewRow[]);
+    setSqlHotelCapView(s.hotelCapacityView as HotelCapacityViewRow[]);
+  }, []);
+
+  useEffect(() => {
+    if (!useApi) return;
+    let cancelled = false;
+    setApiDataLoading(true);
+    setApiConnectionError(null);
+    fetchBootstrap()
+      .then((snapshot) => {
+        if (!cancelled) applySnapshot(snapshot);
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setApiConnectionError(err.message ?? 'Failed to load API data');
+      })
+      .finally(() => {
+        if (!cancelled) setApiDataLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [useApi, applySnapshot]);
 
   const searchAvailableRooms = (filters: RoomSearchFilters) => {
     return rooms.filter((room) => {
@@ -519,12 +564,42 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
     setRooms((current) => current.filter((entry) => entry.id !== roomId));
   };
 
-  const createBooking = (input: {
+  const createBooking = async (input: {
     roomId: string;
     customer: Omit<Customer, 'id' | 'registrationDate'>;
     startDate: string;
     endDate: string;
-  }) => {
+  }): Promise<Booking | null> => {
+    if (useApi) {
+      if (input.startDate < todayString() || input.startDate > maxAdvanceBookingDate()) {
+        return null;
+      }
+      if (!isRoomAvailableForStay(input.roomId, input.startDate, input.endDate)) {
+        return null;
+      }
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: input.roomId,
+          customer: {
+            fullName: input.customer.fullName,
+            address: input.customer.address,
+            idNumber: input.customer.idNumber
+          },
+          startDate: input.startDate,
+          endDate: input.endDate
+        })
+      });
+      const data = (await res.json()) as { bookingId?: string; snapshot?: BootstrapSnapshot; error?: string };
+      if (!res.ok || !data.snapshot || !data.bookingId) {
+        return null;
+      }
+      applySnapshot(data.snapshot);
+      const created = data.snapshot.bookings.find((b) => b.id === String(data.bookingId));
+      return created ?? null;
+    }
+
     if (input.startDate < todayString()) {
       return null;
     }
@@ -574,7 +649,14 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
     return nextBooking;
   };
 
-  const cancelBooking = (bookingId: string) => {
+  const cancelBooking = async (bookingId: string) => {
+    if (useApi) {
+      const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/cancel`, { method: 'PATCH' });
+      const data = (await res.json()) as { snapshot?: BootstrapSnapshot };
+      if (res.ok && data.snapshot) applySnapshot(data.snapshot);
+      return;
+    }
+
     setBookings((current) =>
       current.map((entry) => (entry.id === bookingId ? { ...entry, status: 'Cancelled' } : entry))
     );
@@ -583,7 +665,22 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
     );
   };
 
-  const convertBookingToRenting = (bookingId: string, employeeId: string) => {
+  const convertBookingToRenting = async (bookingId: string, employeeId: string): Promise<Renting | null> => {
+    if (useApi) {
+      const res = await fetch('/api/rentings/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, employeeId })
+      });
+      const data = (await res.json()) as { snapshot?: BootstrapSnapshot };
+      if (!res.ok || !data.snapshot) return null;
+      applySnapshot(data.snapshot);
+      const renting = [...data.snapshot.rentings]
+        .reverse()
+        .find((r) => r.bookingId === bookingId);
+      return renting ?? null;
+    }
+
     const booking = bookings.find((entry) => entry.id === bookingId);
     if (!booking) return null;
 
@@ -635,13 +732,38 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
     return nextRenting;
   };
 
-  const createDirectRenting = (input: {
+  const createDirectRenting = async (input: {
     customerId: string;
     roomId: string;
     employeeId: string;
     startDate: string;
     endDate: string;
-  }) => {
+  }): Promise<Renting | null> => {
+    if (useApi) {
+      if (input.startDate < todayString() || input.startDate > maxAdvanceBookingDate()) {
+        return null;
+      }
+      if (!isRoomAvailableForStay(input.roomId, input.startDate, input.endDate)) {
+        return null;
+      }
+      const res = await fetch('/api/rentings/direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      });
+      const data = (await res.json()) as { snapshot?: BootstrapSnapshot };
+      if (!res.ok || !data.snapshot) return null;
+      applySnapshot(data.snapshot);
+      const match = data.snapshot.rentings.find(
+        (r) =>
+          r.customerId === input.customerId &&
+          r.roomId === input.roomId &&
+          r.startDate === input.startDate &&
+          r.endDate === input.endDate
+      );
+      return match ?? data.snapshot.rentings[data.snapshot.rentings.length - 1] ?? null;
+    }
+
     if (input.startDate < todayString()) {
       return null;
     }
@@ -695,7 +817,24 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
     return nextRenting;
   };
 
-  const recordPayment = (input: Omit<Payment, 'id'>) => {
+  const recordPayment = async (input: Omit<Payment, 'id'>): Promise<Payment> => {
+    if (useApi) {
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      });
+      const data = (await res.json()) as { snapshot?: BootstrapSnapshot };
+      if (!res.ok || !data.snapshot) {
+        throw new Error('Payment failed');
+      }
+      applySnapshot(data.snapshot);
+      const forRenting = data.snapshot.payments.filter((p) => p.rentingId === input.rentingId);
+      const pay = forRenting.sort((a, b) => Number(b.id) - Number(a.id))[0];
+      if (pay) return pay;
+      throw new Error('Payment failed');
+    }
+
     const nextPayment: Payment = {
       id: createId('pay'),
       ...input
@@ -706,6 +845,8 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const areaAvailableRoomsView = useMemo<AreaAvailableRoomsViewRow[]>(() => {
+    if (useApi) return sqlAreaView;
+
     const activeDate = todayString();
     const grouped = new Map<string, { availableRooms: number; hotelIds: Set<string> }>();
 
@@ -748,9 +889,11 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
         availableRooms: value.availableRooms
       }))
       .sort((left, right) => right.availableRooms - left.availableRooms || left.area.localeCompare(right.area));
-  }, [hotels, rooms, bookings, rentings]);
+  }, [useApi, sqlAreaView, hotels, rooms, bookings, rentings]);
 
   const hotelCapacityView = useMemo<HotelCapacityViewRow[]>(() => {
+    if (useApi) return sqlHotelCapView;
+
     return hotels
       .map((hotel) => {
         const hotelRooms = rooms.filter((room) => room.hotelId === hotel.id);
@@ -767,7 +910,7 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
         };
       })
       .sort((left, right) => right.aggregatedCapacity - left.aggregatedCapacity || left.hotelName.localeCompare(right.hotelName));
-  }, [hotels, rooms, hotelChains]);
+  }, [useApi, sqlHotelCapView, hotels, rooms, hotelChains]);
 
   const value: HotelStoreValue = {
     hotelChains,
@@ -782,6 +925,8 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
     rentingArchives,
     areaAvailableRoomsView,
     hotelCapacityView,
+    apiDataLoading,
+    apiConnectionError,
     searchAvailableRooms,
     isRoomAvailableForStay,
     getUnavailableDatesForRoom,
@@ -801,6 +946,18 @@ export function HotelStoreProvider({ children }: { children: React.ReactNode }) 
     upsertRoom,
     deleteRoom
   };
+
+  if (useApi && apiDataLoading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading…</div>;
+  }
+
+  if (useApi && apiConnectionError) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        Failed to connect to database API: {apiConnectionError}
+      </div>
+    );
+  }
 
   return <HotelStoreContext.Provider value={value}>{children}</HotelStoreContext.Provider>;
 }
