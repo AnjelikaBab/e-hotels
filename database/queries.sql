@@ -1,10 +1,7 @@
--- Sample queries for e-hotels (assignment 2c)
--- At least 4 queries: includes aggregation (Query 1) and a nested subquery (Query 2).
--- Run against a populated database (after populate.sql).
 
--- -----------------------------------------------------------------------------
+
 -- Query 1 — Aggregation: average room price per hotel chain (GROUP BY + AVG)
--- -----------------------------------------------------------------------------
+
 SELECT
   hc."HotelChain_Id",
   hc."Central_Office_Address",
@@ -15,10 +12,10 @@ JOIN "Room" r ON r."Hotel_Id" = h."Hotel_Id"
 GROUP BY hc."HotelChain_Id", hc."Central_Office_Address"
 ORDER BY hc."HotelChain_Id";
 
--- -----------------------------------------------------------------------------
+
 -- Query 2 — Nested query: hotels that have at least one suite room priced above the
 --           chain-wide average suite price (subquery in HAVING / scalar subquery)
--- -----------------------------------------------------------------------------
+
 SELECT
   h."Hotel_Id",
   h."Address",
@@ -37,9 +34,9 @@ HAVING MIN(r."Price") > (
 )
 ORDER BY h."Hotel_Id";
 
--- -----------------------------------------------------------------------------
+
 -- Query 3 — Join + filter: pending or confirmed bookings starting in the next 30 days
--- -----------------------------------------------------------------------------
+
 SELECT
   b."Booking_Id",
   c."First_Name",
@@ -56,9 +53,9 @@ WHERE b."Booking_Status" IN ('Pending', 'Confirmed')
   AND b."Start_Date" < CURRENT_DATE + INTERVAL '30 days'
 ORDER BY b."Start_Date", b."Booking_Id";
 
--- -----------------------------------------------------------------------------
+
 -- Query 4 — EXISTS: employees who have recorded at least one payment (correlated EXISTS)
--- -----------------------------------------------------------------------------
+
 SELECT DISTINCT
   e."Employee_SSN",
   e."First_Name",

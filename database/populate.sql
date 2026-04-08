@@ -1,16 +1,8 @@
--- Sample data for e-hotels (assignment 2b)
--- Prerequisites: run schema.sql, views.sql, enforcement.sql first (then indexes.sql optional).
--- Uses relative dates (CURRENT_DATE + n) so booking/renting triggers (no past starts, max 30 days) succeed on any load date.
---
 -- Contents: 5 chains, 8 hotels per chain (40 hotels), 3+ star ratings per chain, two hotels share area (New York);
---           each hotel has 5 rooms (single..suite); employees, roles, chain contacts, amenities, issues,
---           customers, bookings, rentings, payments.
+--           each hotel has 5 rooms (single..suite);
 
 BEGIN;
 
--- -----------------------------------------------------------------------------
--- Hotel chains (explicit ids 1–5)
--- -----------------------------------------------------------------------------
 INSERT INTO "HotelChain" ("HotelChain_Id", "Central_Office_Address", "Num_of_Hotels") VALUES
   (1, '100 Park Avenue, New York, NY 10017', 0),
   (2, '450 Ocean Drive, Miami, FL 33139', 0),
@@ -32,10 +24,7 @@ INSERT INTO "HotelChainEmail" ("HotelChain_Id", "Email") VALUES
   (4, 'hello@urbansuites.demo'), (4, 'corp@urbansuites.demo'),
   (5, 'welcome@grandheritage.demo'), (5, 'vip@grandheritage.demo');
 
--- -----------------------------------------------------------------------------
--- Hotels (40): Manager_Id NULL until employees exist. Address format "Street, City, ST …" for vw_AvailableRoomsPerArea.
--- Hotels 1–2: same area (New York). Ratings cycle 3/4/5 so each chain has ≥3 categories.
--- -----------------------------------------------------------------------------
+
 INSERT INTO "Hotel" ("Hotel_Id", "Rating", "Address", "Email", "Num_of_Rooms", "Phone_Number", "Manager_Id", "HotelChain_Id")
 SELECT
   u.i,
@@ -91,9 +80,6 @@ FROM unnest(
   ]
 ) WITH ORDINALITY AS u(addr, i);
 
--- -----------------------------------------------------------------------------
--- Employees: one manager + one staff per hotel (80 rows). SSNs are unique demo values.
--- -----------------------------------------------------------------------------
 INSERT INTO "Employee" ("Employee_SSN", "First_Name", "Last_Name", "Address", "Hotel_Id")
 SELECT '101-01-' || LPAD(gs::text, 4, '0'), 'Manager', 'Hotel' || gs, '1 Internal Way, Staff City, ST 00000', gs
 FROM generate_series(1, 40) AS gs;
@@ -168,16 +154,13 @@ INSERT INTO "Booking" ("Hotel_Id", "Room_Id", "Customer_SSN", "Start_Date", "End
   (17, 2, '222-01-0009', CURRENT_DATE + 22, CURRENT_DATE + 26, 'Pending', CURRENT_DATE),
   (25, 5, '222-01-0010', CURRENT_DATE + 40, CURRENT_DATE + 45, 'Confirmed', CURRENT_DATE);
 
--- -----------------------------------------------------------------------------
--- Rentings: walk-ins and one conversion-style row linked to a booking (must match hotel/room/customer).
--- Status in ('Active','Confirmed','Converted') participates in exclusion overlap — use different rooms / non-overlapping ranges.
--- -----------------------------------------------------------------------------
+
 INSERT INTO "Renting" ("Booking_Id", "Hotel_Id", "Room_Id", "Customer_SSN", "Employee_SSN", "Start_Date", "End_Date", "Renting_Status", "Book_Date") VALUES
   (NULL, 4, 1, '222-01-0003', '102-01-0004', CURRENT_DATE + 7, CURRENT_DATE + 10, 'Active', CURRENT_DATE),
   (NULL, 6, 2, '222-01-0005', '102-01-0006', CURRENT_DATE + 9, CURRENT_DATE + 12, 'Active', CURRENT_DATE),
   (NULL, 8, 3, '222-01-0001', '102-01-0008', CURRENT_DATE + 11, CURRENT_DATE + 14, 'Confirmed', CURRENT_DATE);
 
--- Link renting to first booking (same hotel 1, room 1, customer 222-01-0001) — use subselect for Booking_Id
+
 INSERT INTO "Renting" ("Booking_Id", "Hotel_Id", "Room_Id", "Customer_SSN", "Employee_SSN", "Start_Date", "End_Date", "Renting_Status", "Book_Date")
 SELECT b."Booking_Id", b."Hotel_Id", b."Room_Id", b."Customer_SSN", '102-01-0001', CURRENT_DATE + 50, CURRENT_DATE + 55, 'Converted', CURRENT_DATE
 FROM "Booking" b
