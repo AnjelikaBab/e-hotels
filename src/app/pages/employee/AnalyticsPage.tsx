@@ -13,7 +13,6 @@ export const AnalyticsPage: React.FC = () => {
   const { areaAvailableRoomsView, hotelCapacityView } = useHotelStore();
   
   const handleExport = () => {
-    // In a real app, this would export to CSV/Excel
     alert('Export functionality would download the data');
   };
 
@@ -36,7 +35,7 @@ export const AnalyticsPage: React.FC = () => {
       <div className="mb-8">
         <h1 className="mb-2">Business Analytics</h1>
         <p className="text-muted-foreground">
-          View the two SQL-aligned reporting views required for the project
+          View room availability and capacity insights across properties
         </p>
       </div>
       
@@ -110,9 +109,8 @@ export const AnalyticsPage: React.FC = () => {
             <>
               <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>View Description:</strong> This required view shows the number of rooms
-                  currently available in each area, using the active booking and renting records
-                  to exclude unavailable rooms.
+                  <strong>View Description:</strong> Shows the number of rooms currently available in each area,
+                  using active booking and renting records to exclude unavailable rooms.
                 </p>
               </div>
               <div className="overflow-x-auto">
@@ -144,9 +142,8 @@ export const AnalyticsPage: React.FC = () => {
             <>
               <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>View Description:</strong> This required view shows the total aggregated
-                  capacity of every hotel based on the sum of room capacities. Use the hotel filter
-                  to focus on one specific hotel.
+                  <strong>View Description:</strong> Shows total aggregated capacity for each hotel based on
+                  summed room capacities. Use the hotel filter to focus on one property.
                 </p>
               </div>
               <div className="overflow-x-auto">
